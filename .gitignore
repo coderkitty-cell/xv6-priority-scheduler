@@ -1,16 +1,11 @@
-*~
-_*
+# Build products
 *.o
 *.d
-*.asm
 *.sym
 *.img
-vectors.S
-bootblock
-entryother
-initcode
-initcode.out
+xv6.img
 kernel
-kernelmemfs
-mkfs
-.gdbinit
+kernel.o
+/usr/bin/qemu-system-*
+/tmp/*
+*.swp
