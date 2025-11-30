@@ -7,6 +7,9 @@
 #include "mmu.h"
 #include "proc.h"
 
+// ADD THIS
+extern int setpriority(int pid, int priority);
+
 int
 sys_fork(void)
 {
@@ -30,7 +33,6 @@ int
 sys_kill(void)
 {
   int pid;
-
   if(argint(0, &pid) < 0)
     return -1;
   return kill(pid);
@@ -77,15 +79,32 @@ sys_sleep(void)
   return 0;
 }
 
-// return how many clock tick interrupts have occurred
-// since start.
+// return uptime ticks
 int
 sys_uptime(void)
 {
   uint xticks;
-
   acquire(&tickslock);
   xticks = ticks;
   release(&tickslock);
   return xticks;
+}
+
+/*
+ * ========== setpriority() system call ==========
+ */
+int
+sys_setpriority(void)
+{
+  int pid, pr;
+
+  if(argint(0, &pid) < 0)
+    return -1;
+  if(argint(1, &pr) < 0)
+    return -1;
+
+  if(pr < 1 || pr > 10)
+    return -1;
+
+  return setpriority(pid, pr);
 }

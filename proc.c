@@ -89,6 +89,9 @@ found:
   p->state = EMBRYO;
   p->pid = nextpid++;
 
+  /* initialize priority to default value */
+  p->priority = 1;    // default priority (1); higher value = higher priority
+
   release(&ptable.lock);
 
   // Allocate kernel stack.
@@ -175,8 +178,6 @@ growproc(int n)
 }
 
 // Create a new process copying p as the parent.
-// Sets up stack to return as if from system call.
-// Caller must set state of returned proc to RUNNABLE.
 int
 fork(void)
 {
@@ -199,6 +200,9 @@ fork(void)
   np->sz = curproc->sz;
   np->parent = curproc;
   *np->tf = *curproc->tf;
+
+  // inherit priority from parent
+  np->priority = curproc->priority;
 
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;
@@ -332,9 +336,18 @@ scheduler(void)
 
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
+
+    // Select the RUNNABLE process with the highest priority value.
+    struct proc *best = 0;
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
       if(p->state != RUNNABLE)
         continue;
+      if(!best || p->priority > best->priority)
+        best = p;
+    }
+
+    if(best){
+      p = best;
 
       // Switch to chosen process.  It is the process's job
       // to release ptable.lock and then reacquire it
@@ -350,10 +363,11 @@ scheduler(void)
       // It should have changed its p->state before coming back.
       c->proc = 0;
     }
-    release(&ptable.lock);
 
+    release(&ptable.lock);
   }
 }
+
 
 // Enter scheduler.  Must hold only ptable.lock
 // and have changed proc->state. Saves and restores
@@ -495,6 +509,26 @@ kill(int pid)
   release(&ptable.lock);
   return -1;
 }
+
+// Set process priority (kernel helper).
+// Returns 0 on success, -1 if pid not found.
+int
+setpriority(int pid, int priority)
+{
+  struct proc *p;
+
+  acquire(&ptable.lock);
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    if(p->pid == pid){
+      p->priority = priority;
+      release(&ptable.lock);
+      return 0;
+    }
+  }
+  release(&ptable.lock);
+  return -1;
+}
+
 
 //PAGEBREAK: 36
 // Print a process listing to console.  For debugging.

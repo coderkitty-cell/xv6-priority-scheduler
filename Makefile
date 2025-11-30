@@ -181,6 +181,9 @@ UPROGS=\
 	_usertests\
 	_wc\
 	_zombie\
+	_prioritytest\
+	_stress_priority\
+    _edge_priority
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)
